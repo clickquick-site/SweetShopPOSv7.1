@@ -97,6 +97,56 @@
     /* Return btn (24h only) */
     .return-btn { background:rgba(245,158,11,0.15);color:var(--warning);border:1px solid rgba(245,158,11,0.3);font-size:0.75rem;padding:3px 8px;border-radius:4px;cursor:pointer; }
     .return-btn:hover { background:var(--warning);color:#fff; }
+
+    /* ── TICKER STRIP ── */
+    .ticker-strip { overflow:hidden; background:rgba(0,0,0,0.45); border-bottom:1px solid var(--border); height:32px; display:flex; align-items:center; flex-shrink:0; }
+    .ticker-inner { display:flex; gap:0; white-space:nowrap; animation:tickerMove 35s linear infinite; }
+    @keyframes tickerMove { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+    .ticker-item { display:inline-flex; align-items:center; gap:6px; padding:0 22px; font-size:0.78rem; font-weight:700; border-right:1px solid rgba(255,255,255,0.08); }
+    .ticker-up   { color:#10b981; }
+    .ticker-down { color:#ef4444; }
+    .ticker-flat { color:#a0aec0; }
+
+    /* ── KPI CARDS v2 (بورصة) ── */
+    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:14px; }
+    .kpi-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; position:relative; overflow:hidden; transition:transform .18s; }
+    .kpi-card:hover { transform:translateY(-2px); border-color:var(--primary); }
+    .kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+    .kpi-card.green::before  { background:var(--success); }
+    .kpi-card.blue::before   { background:var(--primary); }
+    .kpi-card.red::before    { background:var(--danger); }
+    .kpi-card.yellow::before { background:#f59e0b; }
+    .kpi-card.purple::before { background:#7c3aed; box-shadow:0 0 16px var(--glow); }
+    .kpi-label { font-size:0.7rem; color:var(--text-secondary); font-weight:700; margin-bottom:6px; }
+    .kpi-val   { font-size:1.45rem; font-weight:900; font-family:Impact,sans-serif; line-height:1; }
+    .kpi-sub   { font-size:0.68rem; color:var(--text-secondary); margin-top:5px; display:flex; align-items:center; gap:4px; }
+    .kpi-delta { font-size:0.72rem; font-weight:800; padding:1px 6px; border-radius:8px; }
+    .delta-up   { background:rgba(16,185,129,0.15); color:#10b981; }
+    .delta-down { background:rgba(239,68,68,0.15);  color:#ef4444; }
+    .delta-flat { background:rgba(160,174,192,0.15); color:#a0aec0; }
+
+    /* ── HEALTH METER ── */
+    .health-wrap { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:14px; display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
+    .health-gauge { position:relative; width:120px; height:66px; flex-shrink:0; }
+    .health-gauge svg { overflow:visible; }
+    .health-info { flex:1; min-width:150px; }
+    .health-score { font-size:2rem; font-weight:900; font-family:Impact,sans-serif; }
+    .health-label { font-size:0.85rem; font-weight:700; margin-top:4px; }
+    .health-bars  { display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+    .h-bar-row    { display:flex; align-items:center; gap:8px; font-size:0.75rem; }
+    .h-bar-track  { flex:1; height:6px; background:var(--bg-dark); border-radius:3px; overflow:hidden; }
+    .h-bar-fill   { height:100%; border-radius:3px; transition:width .6s ease; }
+
+    /* ── COMPARISON CHART ── */
+    .compare-legend { display:flex; gap:14px; font-size:0.75rem; font-weight:700; margin-bottom:8px; flex-wrap:wrap; }
+    .legend-line { display:flex; align-items:center; gap:5px; }
+    .legend-line-dot { width:24px; height:3px; border-radius:2px; }
+
+    /* ── ABC TABLE ── */
+    .abc-badge { display:inline-block; width:22px; height:22px; border-radius:50%; font-size:0.72rem; font-weight:900; text-align:center; line-height:22px; }
+    .abc-a { background:rgba(16,185,129,0.2); color:#10b981; }
+    .abc-b { background:rgba(245,158,11,0.2); color:#f59e0b; }
+    .abc-c { background:rgba(239,68,68,0.2);  color:#ef4444; }
   </style>
 </head>
 <body>
@@ -115,7 +165,15 @@
     </div>
   </header>
 
-  <div class="dash-layout">
+  <div class="dash-layout" style="flex-direction:column;">
+    <!-- ── Ticker Strip ── -->
+    <div class="ticker-strip" id="tickerStrip">
+      <div class="ticker-inner" id="tickerInner">
+        <span class="ticker-item ticker-flat">⏳ جاري تحميل البيانات...</span>
+      </div>
+    </div>
+
+    <div style="display:flex;flex:1;overflow:hidden;">
     <!-- ── Left Sidebar Icons ── -->
     <div class="dash-sidebar">
       <div class="dsb-item active" onclick="showPanel('dashboard')" id="dsb-dashboard">
@@ -173,70 +231,108 @@
     <!-- ── Main Content ── -->
     <div class="dash-main">
 
-      <!-- ════ DASHBOARD PANEL ════ -->
+      <!-- ════ DASHBOARD PANEL — نمط البورصة ════ -->
       <div class="section-panel active" id="panel-dashboard">
 
-        <!-- KPI Cards: رصيد الصندوق اللحظي -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;">
-          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;border-top:3px solid var(--success);">
-            <div style="font-size:0.75rem;color:var(--text-secondary);font-weight:700;margin-bottom:6px;">💰 رصيد الصندوق اليوم</div>
-            <div id="kpiCash" style="font-size:1.5rem;font-weight:900;color:var(--success);font-family:Impact,sans-serif;">—</div>
-            <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:4px;">نقداً مقبوض اليوم</div>
+        <!-- KPI Grid v2 -->
+        <div class="kpi-grid">
+          <div class="kpi-card green">
+            <div class="kpi-label">💰 نقد اليوم</div>
+            <div class="kpi-val" id="kpiCash" style="color:var(--success);">—</div>
+            <div class="kpi-sub"><span id="kpiCashDelta" class="kpi-delta delta-flat">—</span> مقارنة بالأمس</div>
           </div>
-          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;border-top:3px solid var(--primary);">
-            <div style="font-size:0.75rem;color:var(--text-secondary);font-weight:700;margin-bottom:6px;">🧾 عدد الفواتير اليوم</div>
-            <div id="kpiInvoices" style="font-size:1.5rem;font-weight:900;color:var(--primary-light);font-family:Impact,sans-serif;">—</div>
-            <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:4px;">فاتورة منجزة</div>
+          <div class="kpi-card blue">
+            <div class="kpi-label">🧾 الفواتير</div>
+            <div class="kpi-val" id="kpiInvoices" style="color:var(--primary-light);">—</div>
+            <div class="kpi-sub"><span id="kpiInvoicesDelta" class="kpi-delta delta-flat">—</span> مقارنة بالأمس</div>
           </div>
-          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;border-top:3px solid var(--danger);">
-            <div style="font-size:0.75rem;color:var(--text-secondary);font-weight:700;margin-bottom:6px;">📋 ديون اليوم</div>
-            <div id="kpiDebts" style="font-size:1.5rem;font-weight:900;color:var(--danger);font-family:Impact,sans-serif;">—</div>
-            <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:4px;">غير محصّلة</div>
+          <div class="kpi-card red">
+            <div class="kpi-label">💳 ديون اليوم</div>
+            <div class="kpi-val" id="kpiDebts" style="color:var(--danger);">—</div>
+            <div class="kpi-sub"><span id="kpiDebtsDelta" class="kpi-delta delta-flat">—</span> مقارنة بالأمس</div>
           </div>
-          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;border-top:3px solid var(--warning);">
-            <div style="font-size:0.75rem;color:var(--text-secondary);font-weight:700;margin-bottom:6px;">💸 المصاريف اليوم</div>
-            <div id="kpiExpenses" style="font-size:1.5rem;font-weight:900;color:var(--warning);font-family:Impact,sans-serif;">—</div>
-            <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:4px;">مصاريف مسجّلة</div>
+          <div class="kpi-card yellow">
+            <div class="kpi-label">💸 مصاريف</div>
+            <div class="kpi-val" id="kpiExpenses" style="color:#f59e0b;">—</div>
+            <div class="kpi-sub" id="kpiExpensesSub" style="color:var(--text-secondary);font-size:0.68rem;">مصاريف مسجّلة</div>
           </div>
-          <div style="background:var(--bg-card);border:2px solid var(--primary);border-radius:var(--radius);padding:14px 16px;border-top:3px solid var(--primary);box-shadow:0 0 16px var(--glow);">
-            <div style="font-size:0.75rem;color:var(--primary-light);font-weight:700;margin-bottom:6px;">🏦 الصافي الحقيقي</div>
-            <div id="kpiNet" style="font-size:1.5rem;font-weight:900;color:var(--primary-light);font-family:Impact,sans-serif;">—</div>
-            <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:4px;">نقد − مصاريف</div>
+          <div class="kpi-card purple">
+            <div class="kpi-label">🏦 الصافي الحقيقي</div>
+            <div class="kpi-val" id="kpiNet" style="color:var(--primary-light);">—</div>
+            <div class="kpi-sub"><span id="kpiNetDelta" class="kpi-delta delta-flat">—</span> نقد − مصاريف</div>
+          </div>
+          <div class="kpi-card blue">
+            <div class="kpi-label">📦 منتجات ناقصة</div>
+            <div class="kpi-val" id="kpiLowStock" style="color:var(--warning);">—</div>
+            <div class="kpi-sub" style="color:var(--text-secondary);">مخزون أقل من 5</div>
+          </div>
+        </div>
+
+        <!-- مؤشر صحة المتجر -->
+        <div class="health-wrap">
+          <div class="health-gauge">
+            <svg width="120" height="66" viewBox="0 0 120 66">
+              <path d="M10,60 A50,50 0 0,1 110,60" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="14" stroke-linecap="round"/>
+              <path id="healthArc" d="M10,60 A50,50 0 0,1 110,60" fill="none" stroke="#10b981" stroke-width="14" stroke-linecap="round"
+                stroke-dasharray="157" stroke-dashoffset="157" style="transition:stroke-dashoffset 1.2s ease,stroke .6s;"/>
+              <line id="healthNeedle" x1="60" y1="60" x2="60" y2="18" stroke="#fff" stroke-width="2.5" stroke-linecap="round"
+                style="transform-origin:60px 60px;transition:transform 1.2s ease;"/>
+              <circle cx="60" cy="60" r="5" fill="var(--bg-card)" stroke="#fff" stroke-width="2"/>
+            </svg>
+          </div>
+          <div class="health-info">
+            <div style="display:flex;align-items:baseline;gap:8px;">
+              <span class="health-score" id="healthScore" style="color:#10b981;">—</span>
+              <span style="font-size:0.78rem;color:var(--text-secondary);">/ 100</span>
+            </div>
+            <div class="health-label" id="healthLabel" style="color:#10b981;">جاري الحساب...</div>
+            <div class="health-bars" id="healthBars"></div>
+          </div>
+          <div style="flex:1;min-width:160px;text-align:center;">
+            <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:6px;font-weight:700;">⏰ آخر تحديث</div>
+            <div id="lastUpdateTime" style="font-size:0.88rem;font-weight:700;color:var(--primary-light);">—</div>
+            <button class="btn btn-sm btn-secondary" style="margin-top:8px;font-size:0.75rem;" onclick="refreshDashboard()">🔄 تحديث</button>
           </div>
         </div>
 
         <!-- Period selector -->
         <div class="period-tabs">
-          <button class="period-tab active" onclick="selectPeriod('week',this)" data-i18n="repPeriodWeek">📅 أسبوعي</button>
-          <button class="period-tab" onclick="selectPeriod('month',this)" data-i18n="repPeriodMonth">🗓️ شهري</button>
-          <button class="period-tab" onclick="selectPeriod('year',this)" data-i18n="repPeriodYear">📆 سنوي</button>
+          <button class="period-tab active" onclick="selectPeriod('week',this)">📅 أسبوعي</button>
+          <button class="period-tab" onclick="selectPeriod('month',this)">🗓️ شهري</button>
+          <button class="period-tab" onclick="selectPeriod('year',this)">📆 سنوي</button>
         </div>
 
-        <!-- Bar chart: daily income -->
+        <!-- مخطط المقارنة -->
         <div class="chart-wrap">
           <div class="chart-title">
-            <span>📈 المداخيل اليومية</span>
-            <span id="chartPeriodLabel" style="font-size:0.78rem;color:var(--text-secondary);"></span>
+            <span>📈 مقارنة الأداء</span>
+            <div class="compare-legend">
+              <div class="legend-line"><div class="legend-line-dot" style="background:#7c3aed;"></div><span>هذه الفترة</span></div>
+              <div class="legend-line"><div class="legend-line-dot" style="background:rgba(124,58,237,0.35);"></div><span>الفترة السابقة</span></div>
+            </div>
           </div>
-          <canvas id="barChart" height="140"></canvas>
+          <canvas id="barChart" height="130"></canvas>
         </div>
 
-        <!-- Pie charts row -->
+        <!-- الدائريات + ABC -->
         <div class="pie-row">
           <div class="chart-wrap">
             <div class="chart-title">🏷️ العائلات الأكثر مبيعاً</div>
-            <canvas id="familyPie" height="180"></canvas>
+            <canvas id="familyPie" height="160"></canvas>
             <div class="donut-legend" id="familyLegend"></div>
           </div>
           <div class="chart-wrap">
-            <div class="chart-title">📦 المنتجات حسب المستوى</div>
-            <canvas id="productPie" height="180"></canvas>
-            <div class="donut-legend" id="productLegend"></div>
+            <div class="chart-title">
+              <span>🔬 تصنيف المنتجات ABC</span>
+              <span style="font-size:0.7rem;color:var(--text-secondary);">A=نجوم · B=متوسط · C=راكد</span>
+            </div>
+            <div id="abcWrap" style="max-height:200px;overflow-y:auto;"></div>
           </div>
         </div>
+
       </div>
 
-      <!-- ════ DAILY INCOME PANEL ════ -->
+            <!-- ════ DAILY INCOME PANEL ════ -->
       <div class="section-panel" id="panel-daily">
         <div class="sec-header">
           <button class="sec-back-btn" onclick="showPanel('dashboard')">← رجوع</button>
@@ -392,6 +488,7 @@
       </div>
 
     </div><!-- end dash-main -->
+    </div><!-- end inner flex -->
   </div><!-- end dash-layout -->
 </div>
 
@@ -520,6 +617,13 @@ async function init() {
   setTodayDate('scaleDate');
   await updateSidebarValues();
   selectPeriod('week', document.querySelector('.period-tab'));
+  // تحديث تلقائي كل 60 ثانية
+  setInterval(async () => {
+    if (currentPanel === 'dashboard') {
+      await refreshData();
+      await updateSidebarValues();
+    }
+  }, 60000);
 }
 
 async function refreshData() {
@@ -560,57 +664,218 @@ function showPanel(name) {
 // ═══════════════════════════════════════════════
 // SIDEBAR QUICK VALUES
 // ═══════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// DASHBOARD ENGINE — نمط البورصة
+// ══════════════════════════════════════════════════════════════
+
+// ── مساعدات التاريخ ──
+function dateStr(d) { const p=n=>('0'+n).slice(-2); return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+function yesterday() { const d=new Date(); d.setDate(d.getDate()-1); return dateStr(d); }
+
+// ── دالة إنشاء Delta ──
+function makeDelta(curr, prev) {
+  if (prev === 0 && curr === 0) return { cls:'delta-flat', txt:'—' };
+  if (prev === 0) return { cls:'delta-up', txt:'جديد ▲' };
+  const pct = ((curr - prev) / Math.abs(prev) * 100).toFixed(1);
+  if (pct > 0)  return { cls:'delta-up',   txt:`▲ ${pct}%` };
+  if (pct < 0)  return { cls:'delta-down', txt:`▼ ${Math.abs(pct)}%` };
+  return { cls:'delta-flat', txt:'= 0%' };
+}
+function setDelta(id, curr, prev) {
+  const el = document.getElementById(id); if (!el) return;
+  const d  = makeDelta(curr, prev);
+  el.className = 'kpi-delta ' + d.cls;
+  el.textContent = d.txt;
+}
+
 async function updateSidebarValues() {
   const today = todayStr();
+  const yest  = yesterday();
 
-  // مبيعات اليوم النقدية (مسددة، ليست ديناً)
-  const todaySales   = allSales.filter(s => !s.isCancelled && !s.isDebt && s.date.startsWith(today));
-  const todayTotal   = todaySales.reduce((s,x) => s+x.total, 0);
-  const el = document.getElementById('dsb-daily-val');
-  if (el) el.textContent = todayTotal.toFixed(0) + ' ' + currency;
+  // ── بيانات اليوم ──
+  const todaySales    = allSales.filter(s => !s.isCancelled && !s.isDebt && s.date.startsWith(today));
+  const todayDebts    = allSales.filter(s => !s.isCancelled && s.isDebt  && s.date.startsWith(today));
+  const todaySettle   = allSales.filter(s => s.debtSettlement && !s.isCancelled && s.date.startsWith(today));
+  const cashIn        = todaySales.reduce((s,x)=>s+x.total,0) + todaySettle.reduce((s,x)=>s+x.total,0);
+  const debtTotal     = allDebtsDB.filter(d => !d.isPaid && d.date.startsWith(today)).reduce((s,d)=>s+d.amount,0);
 
-  // ديون اليوم غير مسددة
-  const todayDebts  = allDebtsDB.filter(d => !d.isPaid && d.date.startsWith(today));
-  const debtTotal   = todayDebts.reduce((s,d) => s+d.amount, 0);
-  const el2 = document.getElementById('dsb-debts-val');
-  if (el2) el2.textContent = debtTotal.toFixed(0) + ' ' + currency;
+  // ── بيانات الأمس (للـ delta) ──
+  const yestSales     = allSales.filter(s => !s.isCancelled && !s.isDebt && s.date.startsWith(yest));
+  const yestSettle    = allSales.filter(s => s.debtSettlement && !s.isCancelled && s.date.startsWith(yest));
+  const yestCashIn    = yestSales.reduce((s,x)=>s+x.total,0) + yestSettle.reduce((s,x)=>s+x.total,0);
+  const yestDebt      = allDebtsDB.filter(d => !d.isPaid && d.date.startsWith(yest)).reduce((s,d)=>s+d.amount,0);
 
-  // ميزان اليوم
-  const scaleItems  = allItems.filter(i => i.isScale && i.date && i.date.startsWith(today));
-  const scaleTotal  = scaleItems.reduce((s,i) => s+i.total, 0);
-  const el3 = document.getElementById('dsb-scale-val');
-  if (el3) el3.textContent = scaleTotal > 0 ? scaleTotal.toFixed(0) : '—';
+  // ── المصاريف ──
+  const allExpenses   = await dbGetAll('expenses');
+  const todayExp      = allExpenses.filter(e => e.date && e.date.startsWith(today));
+  const expTotal      = todayExp.reduce((s,e)=>s+e.amount,0);
 
-  // ════ KPI: رصيد الصندوق اللحظي ════
-  // نقد مقبوض اليوم = مبيعات نقدية + تسديدات ديون اليوم
-  const todaySettlements = allSales.filter(s => s.debtSettlement && !s.isCancelled && s.date.startsWith(today));
-  const settlementTotal  = todaySettlements.reduce((s,x) => s+x.total, 0);
-  const cashIn           = todayTotal + settlementTotal;
+  // ── منتجات ناقصة ──
+  const lowStock      = allProducts.filter(p => (p.quantity || 0) < 5 && (p.quantity || 0) >= 0);
 
-  // مصاريف اليوم
-  const allExpenses = await dbGetAll('expenses');
-  const todayExp    = allExpenses.filter(e => e.date && e.date.startsWith(today));
-  const expTotal    = todayExp.reduce((s,e) => s+e.amount, 0);
-
-  // صافي = نقد مقبوض − مصاريف
-  const netCash = cashIn - expTotal;
+  // ── الصافي ──
+  const netCash       = cashIn - expTotal;
+  const yestExp       = allExpenses.filter(e => e.date && e.date.startsWith(yest)).reduce((s,e)=>s+e.amount,0);
+  const yestNet       = yestCashIn - yestExp;
 
   const fmt = v => v.toFixed(2) + ' ' + currency;
 
-  const kpiCash     = document.getElementById('kpiCash');
-  const kpiInvoices = document.getElementById('kpiInvoices');
-  const kpiDebts    = document.getElementById('kpiDebts');
-  const kpiExpenses = document.getElementById('kpiExpenses');
-  const kpiNet      = document.getElementById('kpiNet');
+  // ── تحديث KPI ──
+  const set = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+  set('kpiCash',     fmt(cashIn));
+  set('kpiInvoices', todaySales.length + (todaySettle.length ? '+'+todaySettle.length : ''));
+  set('kpiDebts',    fmt(debtTotal));
+  set('kpiExpenses', fmt(expTotal));
+  set('kpiLowStock', lowStock.length > 0 ? lowStock.length + ' منتج' : '✅ جيد');
 
-  if (kpiCash)     kpiCash.textContent     = fmt(cashIn);
-  if (kpiInvoices) kpiInvoices.textContent = todaySales.length + (todaySettlements.length ? '+'+todaySettlements.length : '');
-  if (kpiDebts)    kpiDebts.textContent    = fmt(debtTotal);
-  if (kpiExpenses) kpiExpenses.textContent = fmt(expTotal);
-  if (kpiNet) {
-    kpiNet.textContent  = fmt(netCash);
-    kpiNet.style.color  = netCash >= 0 ? 'var(--primary-light)' : 'var(--danger)';
+  const kpiNet = document.getElementById('kpiNet');
+  if (kpiNet) { kpiNet.textContent=fmt(netCash); kpiNet.style.color=netCash>=0?'var(--primary-light)':'var(--danger)'; }
+
+  // ── Delta badges ──
+  setDelta('kpiCashDelta',     cashIn,             yestCashIn);
+  setDelta('kpiInvoicesDelta', todaySales.length,  yestSales.length);
+  setDelta('kpiDebtsDelta',    debtTotal,           yestDebt);
+  setDelta('kpiNetDelta',      netCash,             yestNet);
+
+  // ── Sidebar values ──
+  const el1 = document.getElementById('dsb-daily-val');  if(el1) el1.textContent = cashIn.toFixed(0)+' '+currency;
+  const el2 = document.getElementById('dsb-debts-val');  if(el2) el2.textContent = debtTotal.toFixed(0)+' '+currency;
+  const scaleItems = allItems.filter(i => i.isScale && i.date && i.date.startsWith(today));
+  const el3 = document.getElementById('dsb-scale-val');  if(el3) el3.textContent = scaleItems.length ? scaleItems.reduce((s,i)=>s+i.total,0).toFixed(0)+' '+currency : '—';
+
+  // ── آخر تحديث ──
+  const now = new Date(); const p=n=>('0'+n).slice(-2);
+  const timeStr = p(now.getHours())+':'+p(now.getMinutes())+':'+p(now.getSeconds());
+  set('lastUpdateTime', timeStr);
+
+  // ── مؤشر صحة المتجر ──
+  updateHealthMeter(cashIn, debtTotal, expTotal, lowStock.length);
+
+  // ── Ticker ──
+  updateTicker(cashIn, todaySales.length, debtTotal, lowStock.length, netCash);
+
+  // ── ABC ──
+  renderABC();
+}
+
+// ── مؤشر الصحة ──
+function updateHealthMeter(cash, debts, expenses, lowStockCount) {
+  // حساب النقاط (0-100)
+  let score = 100;
+  // خصم لكل دين كنسبة من النقد
+  if (cash > 0) { const debtRatio = debts / cash; score -= Math.min(40, debtRatio * 100); }
+  else if (debts > 0) score -= 40;
+  // خصم للمصاريف
+  if (cash > 0) { const expRatio = expenses / cash; score -= Math.min(25, expRatio * 80); }
+  // خصم للمنتجات الناقصة
+  score -= Math.min(20, lowStockCount * 3);
+  score = Math.max(0, Math.min(100, Math.round(score)));
+
+  const color = score >= 70 ? '#10b981' : score >= 40 ? '#f59e0b' : '#ef4444';
+  const label = score >= 70 ? '🟢 وضع ممتاز' : score >= 40 ? '🟡 وضع متوسط' : '🔴 يحتاج تدخل';
+
+  // تحديث SVG
+  const arc    = document.getElementById('healthArc');
+  const needle = document.getElementById('healthNeedle');
+  if (arc) {
+    const maxDash = 157;
+    arc.style.strokeDashoffset = maxDash - (maxDash * score / 100);
+    arc.style.stroke = color;
   }
+  if (needle) {
+    const angle = -90 + (score / 100 * 180);
+    needle.style.transform = `rotate(${angle}deg)`;
+  }
+
+  const scoreEl = document.getElementById('healthScore');
+  const labelEl = document.getElementById('healthLabel');
+  if (scoreEl) { scoreEl.textContent=score; scoreEl.style.color=color; }
+  if (labelEl) { labelEl.textContent=label; labelEl.style.color=color; }
+
+  // أشرطة التفاصيل
+  const barsEl = document.getElementById('healthBars');
+  if (barsEl) {
+    const cashRatio = cash > 0 ? Math.min(100, Math.round(cash / (cash + debts + expenses + 1) * 100)) : 0;
+    const debtRatioPct = cash > 0 ? Math.min(100, Math.round(debts / (cash + 1) * 100)) : 0;
+    barsEl.innerHTML = `
+      <div class="h-bar-row"><span style="min-width:55px;color:var(--text-secondary);">💰 نقد</span>
+        <div class="h-bar-track"><div class="h-bar-fill" style="width:${cashRatio}%;background:#10b981;"></div></div>
+        <span style="min-width:32px;text-align:left;font-weight:700;font-size:0.72rem;">${cashRatio}%</span>
+      </div>
+      <div class="h-bar-row"><span style="min-width:55px;color:var(--text-secondary);">💳 ديون</span>
+        <div class="h-bar-track"><div class="h-bar-fill" style="width:${debtRatioPct}%;background:#ef4444;"></div></div>
+        <span style="min-width:32px;text-align:left;font-weight:700;font-size:0.72rem;">${debtRatioPct}%</span>
+      </div>`;
+  }
+}
+
+// ── شريط الـ Ticker ──
+function updateTicker(cash, invoices, debts, lowStock, net) {
+  const inner = document.getElementById('tickerInner');
+  if (!inner) return;
+  const today = todayStr();
+  const yest  = yesterday();
+  const yestSales = allSales.filter(s => !s.isCancelled && !s.isDebt && s.date.startsWith(yest));
+  const yestCash  = yestSales.reduce((s,x)=>s+x.total,0);
+  const delta     = yestCash > 0 ? ((cash - yestCash) / yestCash * 100).toFixed(1) : null;
+  const deltaStr  = delta !== null ? (delta >= 0 ? `▲${delta}%` : `▼${Math.abs(delta)}%`) : '';
+  const deltaClass= delta >= 0 ? 'ticker-up' : 'ticker-down';
+
+  const topProduct = [...allProducts].sort((a,b)=>(b.quantity||0)-(a.quantity||0))[0];
+  const totalDebtAll = allDebtsDB.filter(d=>!d.isPaid).reduce((s,d)=>s+d.amount,0);
+
+  const items = [
+    `<span class="ticker-item ticker-up">💰 نقد اليوم: ${cash.toFixed(2)} ${currency} <span class="${deltaClass}">${deltaStr}</span></span>`,
+    `<span class="ticker-item ticker-flat">🧾 فواتير: ${invoices}</span>`,
+    `<span class="ticker-item ${debts>0?'ticker-down':'ticker-up'}">💳 ديون اليوم: ${debts.toFixed(2)} ${currency}</span>`,
+    `<span class="ticker-item ${net>=0?'ticker-up':'ticker-down'}">🏦 الصافي: ${net.toFixed(2)} ${currency}</span>`,
+    `<span class="ticker-item ${lowStock>0?'ticker-down':'ticker-up'}">📦 منتجات ناقصة: ${lowStock > 0 ? lowStock : 'لا شيء ✅'}</span>`,
+    `<span class="ticker-item ticker-down">📋 إجمالي الديون القائمة: ${totalDebtAll.toFixed(2)} ${currency}</span>`,
+    topProduct ? `<span class="ticker-item ticker-flat">🏆 أكثر مخزوناً: ${topProduct.name} (${topProduct.quantity})</span>` : '',
+    `<span class="ticker-item ticker-flat">🕐 ${new Date().toLocaleTimeString('ar-DZ')}</span>`,
+  ].filter(Boolean).join('');
+  // مضاعفة للانسياب اللانهائي
+  inner.innerHTML = items + items;
+}
+
+// ── تصنيف ABC ──
+function renderABC() {
+  const wrap = document.getElementById('abcWrap');
+  if (!wrap) return;
+  if (!allItems.length) { wrap.innerHTML='<p style="color:var(--text-secondary);text-align:center;padding:20px;">لا توجد بيانات مبيعات</p>'; return; }
+
+  // تجميع المبيعات لكل منتج
+  const prodMap = {};
+  allItems.forEach(i => {
+    if (!i.productId || i.isInterest) return;
+    if (!prodMap[i.productId]) prodMap[i.productId] = { name: i.productName || '—', total: 0, qty: 0 };
+    prodMap[i.productId].total += i.total || 0;
+    prodMap[i.productId].qty   += i.quantity || 0;
+  });
+  const sorted = Object.values(prodMap).sort((a,b)=>b.total-a.total);
+  const grandTotal = sorted.reduce((s,x)=>s+x.total,0);
+  if (!grandTotal) { wrap.innerHTML='<p style="color:var(--text-secondary);text-align:center;padding:20px;">لا توجد مبيعات</p>'; return; }
+
+  let cumulative = 0;
+  const rows = sorted.slice(0, 20).map(p => {
+    cumulative += p.total;
+    const pct = (p.total / grandTotal * 100).toFixed(1);
+    const cumPct = (cumulative / grandTotal * 100);
+    const cls = cumPct <= 80 ? 'abc-a' : cumPct <= 95 ? 'abc-b' : 'abc-c';
+    const grade = cls === 'abc-a' ? 'A' : cls === 'abc-b' ? 'B' : 'C';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid rgba(255,255,255,0.04);">
+      <span class="abc-badge ${cls}">${grade}</span>
+      <span style="flex:1;font-size:0.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span>
+      <span style="font-size:0.78rem;font-weight:700;color:var(--primary-light);">${pct}%</span>
+    </div>`;
+  }).join('');
+  wrap.innerHTML = rows;
+}
+
+async function refreshDashboard() {
+  await refreshData();
+  await updateSidebarValues();
+  selectPeriod(currentPeriod, document.querySelector('.period-tab.active'));
 }
 
 // ═══════════════════════════════════════════════
@@ -630,74 +895,89 @@ function drawBarChart() {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
 
-  // Generate date range
-  const today = new Date();
-  const dates = [];
-  let days = currentPeriod === 'week' ? 7 : currentPeriod === 'month' ? 30 : 12;
+  const today  = new Date();
+  const dates  = [];
+  const days   = currentPeriod === 'week' ? 7 : currentPeriod === 'month' ? 30 : 12;
   const isYear = currentPeriod === 'year';
 
+  // الفترة الحالية
   for (let i = days - 1; i >= 0; i--) {
     if (isYear) {
       const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
       dates.push({ key: d.toISOString().slice(0,7), label: d.toLocaleDateString('ar-DZ',{month:'short'}) });
     } else {
       const d = new Date(today); d.setDate(d.getDate() - i);
-      dates.push({ key: d.toISOString().slice(0,10), label: d.getDate() + '/' + (d.getMonth()+1) });
+      dates.push({ key: d.toISOString().slice(0,10), label: d.getDate()+'/'+(d.getMonth()+1) });
     }
   }
 
-  const values = dates.map(d => {
-    const s = allSales.filter(x => !x.isCancelled && !x.isDebt && x.date.startsWith(d.key));
-    return s.reduce((acc,x) => acc + x.total, 0);
-  });
-  const maxVal = Math.max(...values, 1);
-
-  const label = currentPeriod === 'week' ? 'آخر 7 أيام' : currentPeriod === 'month' ? 'آخر 30 يوم' : 'آخر 12 شهر';
-  const periodEl = document.getElementById('chartPeriodLabel');
-  if (periodEl) periodEl.textContent = label;
-
-  // Size canvas
-  const W = canvas.parentElement.clientWidth - 32;
-  const H = 140;
-  canvas.width  = W;
-  canvas.height = H;
-
-  ctx.clearRect(0, 0, W, H);
-
-  const barW = Math.max(8, (W / dates.length) - 6);
-  const padT = 16, padB = 24;
-  const chartH = H - padT - padB;
-
-  values.forEach((val, i) => {
-    const ratio = val / maxVal;
-    const bh    = Math.max(2, ratio * chartH);
-    const x     = i * (W / dates.length) + (W / dates.length - barW) / 2;
-    const y     = padT + chartH - bh;
-
-    // Color based on income level
-    const r = Math.round(239 - ratio * 180);
-    const g = Math.round(68  + ratio * 117);
-    const b = Math.round(68  + ratio * 68);
-    ctx.fillStyle = `rgba(${r},${g},${b},0.85)`;
-
-    // Rounded top bar
-    ctx.beginPath();
-    ctx.roundRect(x, y, barW, bh, [4, 4, 0, 0]);
-    ctx.fill();
-
-    // Label
-    ctx.fillStyle = 'rgba(160,160,192,0.8)';
-    ctx.font = `${Math.max(8, barW > 20 ? 9 : 7)}px Cairo`;
-    ctx.textAlign = 'center';
-    ctx.fillText(dates[i].label, x + barW / 2, H - 6);
-
-    // Value on top
-    if (val > 0 && barW > 18) {
-      ctx.fillStyle = '#fff';
-      ctx.font = '8px Cairo';
-      ctx.fillText(val >= 1000 ? (val/1000).toFixed(1)+'k' : val.toFixed(0), x + barW / 2, y - 3);
+  // الفترة السابقة (نفس المدة قبلها)
+  const prevDates = dates.map(d => {
+    if (isYear) {
+      const dt = new Date(d.key + '-01');
+      dt.setFullYear(dt.getFullYear() - 1);
+      return dt.toISOString().slice(0,7);
+    } else {
+      const dt = new Date(d.key);
+      dt.setDate(dt.getDate() - days);
+      return dt.toISOString().slice(0,10);
     }
   });
+
+  const vals     = dates.map(d => allSales.filter(x=>!x.isCancelled&&!x.isDebt&&x.date.startsWith(d.key)).reduce((s,x)=>s+x.total,0));
+  const prevVals = prevDates.map(k => allSales.filter(x=>!x.isCancelled&&!x.isDebt&&x.date.startsWith(k)).reduce((s,x)=>s+x.total,0));
+
+  const maxVal = Math.max(...vals, ...prevVals, 1);
+
+  const W = canvas.parentElement.clientWidth - 32;
+  const H = 130;
+  canvas.width = W; canvas.height = H;
+  ctx.clearRect(0, 0, W, H);
+
+  const barW  = Math.max(4, (W / dates.length) - 8);
+  const padT  = 14, padB = 22;
+  const chartH = H - padT - padB;
+  const step   = W / dates.length;
+
+  // رسم الأعمدة (هذه الفترة — أرجواني، الفترة السابقة — شفاف)
+  dates.forEach((d, i) => {
+    const x    = i * step + (step - barW * 2 - 2) / 2;
+
+    // الفترة السابقة (رمادي شفاف)
+    const prevH = Math.max(2, (prevVals[i] / maxVal) * chartH);
+    ctx.fillStyle = 'rgba(124,58,237,0.25)';
+    ctx.beginPath();
+    ctx.roundRect(x, padT + chartH - prevH, barW, prevH, [3,3,0,0]);
+    ctx.fill();
+
+    // الفترة الحالية (أرجواني كامل)
+    const curH  = Math.max(2, (vals[i] / maxVal) * chartH);
+    const ratio = vals[i] / maxVal;
+    const r = Math.round(100 + ratio*30), g = Math.round(40 + ratio*80), bv = Math.round(220 - ratio*30);
+    ctx.fillStyle = `rgba(${r},${g},${bv},0.92)`;
+    ctx.beginPath();
+    ctx.roundRect(x + barW + 2, padT + chartH - curH, barW, curH, [3,3,0,0]);
+    ctx.fill();
+
+    // قيمة على القمة
+    if (vals[i] > 0 && barW > 10) {
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.font = '7.5px Cairo';
+      ctx.textAlign = 'center';
+      ctx.fillText(vals[i]>=1000?(vals[i]/1000).toFixed(1)+'k':vals[i].toFixed(0), x+barW+2+barW/2, padT+chartH-curH-3);
+    }
+
+    // تسمية التاريخ
+    ctx.fillStyle = 'rgba(160,160,192,0.8)';
+    ctx.font = `${Math.max(7, barW>14?8.5:7)}px Cairo`;
+    ctx.textAlign = 'center';
+    ctx.fillText(d.label, x + barW + 2 + barW/2, H - 5);
+  });
+
+  // خط أساسي
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth   = 1;
+  ctx.beginPath(); ctx.moveTo(0, padT + chartH); ctx.lineTo(W, padT + chartH); ctx.stroke();
 }
 
 // ── Pie Charts ──
@@ -778,7 +1058,8 @@ function drawPieCharts() {
     else if (r >= 0.15) levels[2].value += v;
     else levels[3].value += v;
   });
-  drawPie('productPie', 'productLegend', levels.filter(l=>l.value>0));
+  // productPie مُستبدل بـ ABC في لوحة التحكم الجديدة
+  renderABC();
 }
 
 // ═══════════════════════════════════════════════
