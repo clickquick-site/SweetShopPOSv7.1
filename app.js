@@ -7,7 +7,7 @@ const APP_VERSION = { number:'6.0.0', date:'2026-03-02', name:'POS DZ' };
 // ══════════════════════════════════════════════════════════════
 //  IndexedDB
 // ══════════════════════════════════════════════════════════════
-const DB_NAME = 'POSDZ_DB', DB_VERSION = 3;
+const DB_NAME = 'POSDZ_DB', DB_VERSION = 4;
 let db = null;
 
 function openDB() {
@@ -31,6 +31,8 @@ function openDB() {
       if (!d.objectStoreNames.contains('purchases'))  { const s=d.createObjectStore('purchases',{keyPath:'id',autoIncrement:true}); s.createIndex('date','date',{unique:false}); s.createIndex('supplierId','supplierId',{unique:false}); }
       if (!d.objectStoreNames.contains('debtPayments')){ const s=d.createObjectStore('debtPayments',{keyPath:'id',autoIncrement:true}); s.createIndex('debtId','debtId',{unique:false}); s.createIndex('customerId','customerId',{unique:false}); s.createIndex('date','date',{unique:false}); }
       if (!d.objectStoreNames.contains('syncQueue'))  { const s=d.createObjectStore('syncQueue',{keyPath:'id',autoIncrement:true}); s.createIndex('createdAt','createdAt',{unique:false}); }
+      if (!d.objectStoreNames.contains('workers'))    { d.createObjectStore('workers',{keyPath:'id',autoIncrement:true}); }
+      if (!d.objectStoreNames.contains('workerPayments')) { const s=d.createObjectStore('workerPayments',{keyPath:'id',autoIncrement:true}); s.createIndex('workerId','workerId',{unique:false}); s.createIndex('date','date',{unique:false}); }
     };
     req.onsuccess = async (e) => { db=e.target.result; await seedDefaults(); resolve(db); };
     req.onerror   = () => reject(req.error);
