@@ -1508,11 +1508,11 @@ function updateDateDisplay() {
 async function updateSidebarValues() {
   const today = window.dateUtils.today();
   
-  // مداخيل اليوم
+  // مداخيل اليوم (فقط ما قُبض فعلاً — paid، لا total الذي يشمل الديون)
   const todaySales = allSales.filter(s => 
     !s.isCancelled && s.date.startsWith(today)
   );
-  const dailyTotal = todaySales.reduce((sum, s) => sum + (s.total || 0), 0);
+  const dailyTotal = todaySales.reduce((sum, s) => sum + (s.paid || 0), 0);
   document.getElementById('dailyValue').textContent = window.currencyFormatter.formatWithoutSymbol(dailyTotal);
   
   // ديون اليوم
@@ -1534,8 +1534,8 @@ async function loadDashboard() {
   const todaySales = allSales.filter(s => !s.isCancelled && s.date.startsWith(today));
   const yesterdaySales = allSales.filter(s => !s.isCancelled && s.date.startsWith(yesterday));
   
-  const todayRevenue = todaySales.reduce((sum, s) => sum + (s.total || 0), 0);
-  const yesterdayRevenue = yesterdaySales.reduce((sum, s) => sum + (s.total || 0), 0);
+  const todayRevenue = todaySales.reduce((sum, s) => sum + (s.paid || 0), 0);
+  const yesterdayRevenue = yesterdaySales.reduce((sum, s) => sum + (s.paid || 0), 0);
   
   // حساب التكلفة
   let todayCost = 0;
@@ -1593,7 +1593,7 @@ async function loadDashboard() {
 async function updateTicker() {
   const today = window.dateUtils.today();
   const todaySales = allSales.filter(s => !s.isCancelled && s.date.startsWith(today));
-  const todayRevenue = todaySales.reduce((sum, s) => sum + (s.total || 0), 0);
+  const todayRevenue = todaySales.reduce((sum, s) => sum + (s.paid || 0), 0);
   
   const lowStock = allProducts.filter(p => p.quantity > 0 && p.quantity <= 5).length;
   const outStock = allProducts.filter(p => p.quantity === 0).length;
@@ -1824,7 +1824,7 @@ async function updateHealthMeter() {
   const totalDebts = allDebts.filter(d => !d.isPaid).reduce((sum, d) => sum + (d.amount || 0), 0);
   const todayRevenue = allSales
     .filter(s => !s.isCancelled && s.date.startsWith(today))
-    .reduce((sum, s) => sum + (s.total || 0), 0);
+    .reduce((sum, s) => sum + (s.paid || 0), 0);
   
   if (todayRevenue > 0) {
     const debtRatio = totalDebts / todayRevenue;
@@ -2004,7 +2004,8 @@ async function loadDailyReport() {
     !s.isCancelled && s.date.startsWith(date)
   );
   
-  const total = daySales.reduce((sum, s) => sum + (s.total || 0), 0);
+  // إجمالي ما قُبض فعلاً (paid) — الديون غير المدفوعة لا تُحسب كمدخول
+  const total = daySales.reduce((sum, s) => sum + (s.paid || 0), 0);
   const count = daySales.length;
   
   // حساب المصاريف
@@ -2359,7 +2360,8 @@ async function loadAccounting() {
     !s.isCancelled && s.date.startsWith(date)
   );
   
-  const revenue = daySales.reduce((sum, s) => sum + (s.total || 0), 0);
+  // إجمالي ما قُبض (paid) — لا total الذي يشمل الديون غير المسددة
+  const revenue = daySales.reduce((sum, s) => sum + (s.paid || 0), 0);
   const count = daySales.length;
   
   // حساب التكلفة
