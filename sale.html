@@ -141,6 +141,12 @@
       font-weight: 900;
       text-align: center;
       outline: none;
+      -moz-appearance: textfield;
+    }
+    .quick-qty-input::-webkit-outer-spin-button,
+    .quick-qty-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
     }
 
     /* قائمة الاقتراحات */
@@ -298,8 +304,10 @@
 
     .cart-item .product-info {
       display: flex;
-      flex-direction: column;
-      gap: 3px;
+      flex-direction: row;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
     }
 
     .cart-item .product-name {
@@ -360,6 +368,12 @@
       font-weight: 800;
       text-align: center;
       outline: none;
+      -moz-appearance: textfield;
+    }
+    .cart-item .qty-value::-webkit-outer-spin-button,
+    .cart-item .qty-value::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
     }
 
     .cart-item .price-input {
@@ -1324,11 +1338,12 @@ function addToCart(product, quantity = null) {
 
 function adjustQuantity(index, delta) {
   const item = cart[index];
+  if (!item) return;
   const product = allProducts.find(p => p.id === item.productId);
   const newQty = item.quantity + delta;
   
   if (newQty <= 0) {
-    removeFromCart(index);
+    // لا نحذف تلقائياً — الحذف فقط بزر سلة المهملات
     return;
   }
   
