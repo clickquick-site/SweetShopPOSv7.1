@@ -1409,7 +1409,9 @@ function openPaymentModal(customerId, debtId = null) {
     totalDebt = debts.reduce((sum, d) => sum + (d.amount || 0), 0);
   }
   
-  document.getElementById('paymentInfo').innerHTML = `
+  const paymentInfoEl = document.getElementById('paymentInfo');
+  paymentInfoEl.dataset.totalDebt = totalDebt;
+  paymentInfoEl.innerHTML = `
     <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
       <span>الزبون:</span>
       <span style="font-weight:800; color:var(--primary-light);">${window.sanitizer.escape(customer.name)}</span>
@@ -1430,21 +1432,16 @@ function openPaymentModal(customerId, debtId = null) {
 
 function updatePaymentRemaining() {
   const amount = parseFloat(document.getElementById('paymentAmount').value) || 0;
-  const info = document.getElementById('paymentInfo').innerHTML;
-  const match = info.match(/(\d+[.,]?\d*)/g);
+  const totalDebt = parseFloat(document.getElementById('paymentInfo').dataset.totalDebt) || 0;
+  const remaining = Math.max(0, totalDebt - amount);
   
-  if (match && match.length >= 2) {
-    const totalDebt = parseFloat(match[1].replace(',', '.'));
-    const remaining = Math.max(0, totalDebt - amount);
-    
-    const remainingEl = document.getElementById('paymentRemaining');
-    if (amount >= totalDebt) {
-      remainingEl.innerHTML = '✅ سيتم تسديد الدين بالكامل';
-      remainingEl.style.color = 'var(--success)';
-    } else {
-      remainingEl.innerHTML = `المتبقي بعد الدفع: ${window.currencyFormatter.format(remaining)}`;
-      remainingEl.style.color = 'var(--warning)';
-    }
+  const remainingEl = document.getElementById('paymentRemaining');
+  if (amount >= totalDebt) {
+    remainingEl.innerHTML = '✅ سيتم تسديد الدين بالكامل';
+    remainingEl.style.color = 'var(--success)';
+  } else {
+    remainingEl.innerHTML = `المتبقي بعد الدفع: ${window.currencyFormatter.format(remaining)}`;
+    remainingEl.style.color = 'var(--warning)';
   }
 }
 
@@ -1548,24 +1545,6 @@ async function confirmPayment() {
       }
     }
   }
-  
-  // تسجيل كفاتورة تسديد
-  const invoiceNumber = await window.getNextInvoiceNumber();
-  const user = window.sessionManager.getUser();
-  
-  await window.dbManager.add('sales', {
-    invoiceNumber,
-    userId: user.id,
-    customerId: activeCustomerId,
-    total: amount,
-    discount: 0,
-    paid: amount,
-    isDebt: 0,
-    isCancelled: 0,
-    debtSettlement: true,
-    date: now,
-    note: note || 'تسديد دين'
-  });
   
   await loadAllData();
   window.modalManager.close('paymentModal');
